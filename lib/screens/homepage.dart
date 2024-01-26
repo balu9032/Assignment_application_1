@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 89, 171, 238),
-          title: const Text('Select Brand'),
+          title: const Text('Shop Your Brand'),
         ),
         body: ModalProgressHUD(
           inAsyncCall: isLoading,

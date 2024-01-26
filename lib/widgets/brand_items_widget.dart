@@ -144,7 +144,7 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
       itemBuilder: (context, index) {
         return GridTile(
           child: Card(
-            color: getColorForIndex(index),
+            // color: getColorForIndex(index),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: InkWell(
