@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import "package:http/http.dart" as http;
+import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
+
+String dropdownvalue = '';
 
 class BrandItemWidget extends StatefulWidget {
   const BrandItemWidget({super.key, required this.brand});
@@ -15,20 +18,38 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
   List<dynamic> data = [];
 
   var dropdownMenuEntries = [];
-  String dropdownvalue = '';
+  var entriesCount = 0;
+
+  var isLoading = true;
+
   @override
   void initState() {
     super.initState();
     fetchData();
+    fetchProductType();
   }
 
   Future<void> fetchProductType() async {
-    print(dropdownvalue);
     if (dropdownvalue.isNotEmpty) {
+      isLoading = true;
       final response = await http.get(Uri.parse(
           'https://makeup-api.herokuapp.com/api/v1/products.json?product_type=$dropdownvalue&brand=${widget.brand}'));
       if (response.statusCode == 200) {
         data = json.decode(response.body);
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+    if (dropdownvalue.isNotEmpty && dropdownvalue == 'All') {
+      isLoading = true;
+      final response = await http.get(Uri.parse(
+          'https://makeup-api.herokuapp.com/api/v1/products.json?brand=${widget.brand}'));
+      if (response.statusCode == 200) {
+        data = json.decode(response.body);
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }
@@ -45,9 +66,9 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
               .map((product) => product['product_type'])
               .toSet()
               .toList();
-          print('we are entered brand page');
-          print(dropdownMenuEntries);
         });
+        dropdownMenuEntries.add('All');
+        dropdownvalue = 'All';
       } else {
         throw Exception('Failed to load data');
       }
@@ -60,20 +81,28 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
       appBar: AppBar(
           automaticallyImplyLeading: false,
           leadingWidth: MediaQuery.of(context).size.width * 0.40,
-          leading: DropdownButton<String>(
-            value: dropdownMenuEntries[0]!,
-            onChanged: (newValue) {
-              setState(() {
-                dropdownvalue = newValue!;
-              });
-            },
-            items: dropdownMenuEntries.map((item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item),
-              );
-            }).toList(),
-            focusColor: Colors.white,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: DropdownButtonFormField<String>(
+              hint: const Text(
+                'All Products',
+                style: TextStyle(fontSize: 12),
+              ),
+              value: null,
+              isDense: true,
+              onChanged: (newValue) {
+                setState(() {
+                  dropdownvalue = newValue!;
+                });
+              },
+              items: dropdownMenuEntries.map((item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                );
+              }).toList(),
+              focusColor: Colors.white,
+            ),
           ),
           actions: [
             Row(
@@ -87,16 +116,24 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
                       productsView();
                     });
                   },
-                  child: const Text('Submit'),
+                  child: const Text('Search Produt Type'),
                 ),
               ],
             )
           ]),
-      body: productsView(),
+      body: ModalProgressHUD(
+          inAsyncCall: isLoading,
+          progressIndicator: const CircularProgressIndicator(),
+          child: productsView()),
     );
   }
 
   GridView productsView() {
+    Color getColorForIndex(int index) {
+      return Color.fromARGB(255 + index * 40, 92 + index * 30, 144 + index * 40,
+          233 + index * 20);
+    }
+
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -107,23 +144,50 @@ class _BrandItemWidgetState extends State<BrandItemWidget> {
       itemBuilder: (context, index) {
         return GridTile(
           child: Card(
+            color: getColorForIndex(index),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: InkWell(
               onTap: () {},
-              child: Column(children: [
-                ClipRRect(
-                  child: Image.network(
-                    data[index]['image_link'],
-                    errorBuilder: ((context, error, stackTrace) {
-                      return Image.asset('assets/noimage.png');
-                    }),
-                    width: MediaQuery.of(context).size.width * 0.40,
-                    height: MediaQuery.of(context).size.height * 0.19,
-                    fit: BoxFit.fill,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(children: [
+                  Expanded(
+                    child: ClipRRect(
+                      child: Image.network(
+                        data[index]['image_link'],
+                        errorBuilder: ((context, error, stackTrace) {
+                          return Image.asset('assets/noimage.png');
+                        }),
+                        width: MediaQuery.of(context).size.width * 0.40,
+                        height: MediaQuery.of(context).size.height * 0.19,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
                   ),
-                ),
-                Text(data[index]['name']),
-                Text('Price \$${data[index]['price']}'),
-              ]),
+                  Text(
+                    data[index]['name'],
+                    style: const TextStyle(overflow: TextOverflow.ellipsis),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        'Rating: ${data[index]['rating']}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                        ),
+                      ),
+                      Text(
+                        'Price \$${data[index]['price']}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ]),
+              ),
             ),
           ),
         );

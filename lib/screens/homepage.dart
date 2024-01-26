@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:assignment_1/screens/brand_items.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,8 +12,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<dynamic> loadedData = [];
-
   List<dynamic> data = [];
   List<dynamic> distinct = [];
 
@@ -21,9 +20,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchData();
-    if (isLoading) {
-      const CircularProgressIndicator();
-    }
   }
 
   Future<void> fetchData() async {
@@ -44,42 +40,52 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     Color getColorForIndex(int index) {
-      return Color.fromARGB(255 + index * 20, 92 + index * 20, 144 + index * 20,
+      return Color.fromARGB(255 + index * 40, 92 + index * 30, 144 + index * 40,
           233 + index * 20);
     }
 
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 89, 171, 238),
           title: const Text('Select Brand'),
         ),
-        body: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-          ),
-          itemCount: distinct.length,
-          itemBuilder: (context, index) {
-            Color itemColor = getColorForIndex(index);
-            if (distinct[index] != null) {
-              return GridTile(
-                child: InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) =>
-                            BrandItemsList(brand: distinct[index])));
-                  },
-                  child: Card(
-                    color: itemColor,
-                    child: Center(
-                      child: Text(distinct[index]),
+        body: ModalProgressHUD(
+          inAsyncCall: isLoading,
+          progressIndicator: const CircularProgressIndicator(),
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+            ),
+            itemCount: distinct.length,
+            itemBuilder: (context, index) {
+              Color itemColor = getColorForIndex(index);
+              if (distinct[index] != null) {
+                return GridTile(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) =>
+                              BrandItemsList(brand: distinct[index])));
+                    },
+                    child: Card(
+                      color: itemColor,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                        child: Center(
+                          child: Text(
+                            distinct[index].toString().toUpperCase(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }
-            return null;
-          },
+                );
+              }
+              return null;
+            },
+          ),
         ));
   }
 }

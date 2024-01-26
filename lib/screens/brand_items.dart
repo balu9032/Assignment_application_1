@@ -16,6 +16,7 @@ class _BrandItemsListState extends State<BrandItemsList> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 89, 171, 238),
           title: Text(widget.brand.toUpperCase()),
         ),
         body: BrandItemWidget(brand: widget.brand));
